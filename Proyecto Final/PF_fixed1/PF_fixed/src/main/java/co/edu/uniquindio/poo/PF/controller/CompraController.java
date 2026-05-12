@@ -22,11 +22,6 @@ public class CompraController {
     public ServicioCompra getServicioCompra()    { return servicioCompra; }
     public void setServicioCompra(ServicioCompra s) { this.servicioCompra = s; }
 
-    public Compra crearCompra(CompraDTO dto) {
-        Compra c = servicioCompra.realizarCompra(dto);
-        compras.add(c);
-        return c;
-    }
 
     public Compra crearCompraMultiAsiento(CompraDTO dto, List<Asiento> asientos) {
         Compra c = servicioCompra.realizarCompraMultiAsiento(dto, asientos);
@@ -47,7 +42,19 @@ public class CompraController {
         servicioCompra.pagarCompraPendiente(c, metodo);
         return true;
     }
+    public boolean cancelarReserva(String idCompra) {
+        Compra c = buscarPorId(idCompra);
+        if (c == null || c.getEstado() != EstadoCompra.CREADA) return false;
 
+        for (Entrada entrada : c.getEntradas()) {
+            if (entrada.getAsiento() != null) {
+                entrada.getAsiento().liberar();
+            }
+        }
+
+        c.cancelar();
+        return true;
+    }
     public boolean cancelar(String idCompra) {
         Compra c = buscarPorId(idCompra);
         if (c == null) return false;

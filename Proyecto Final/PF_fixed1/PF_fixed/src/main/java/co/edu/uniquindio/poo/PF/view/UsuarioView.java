@@ -97,9 +97,14 @@ public class UsuarioView {
         Button btnPagar = new Button("Pagar Reserva");
         btnPagar.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white;");
         btnPagar.setDisable(true);
+        Button btnCancelar = new Button("Cancelar Reserva");
+        btnCancelar.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: white;");
+        btnCancelar.setDisable(true);
 
         lista.getSelectionModel().selectedItemProperty().addListener((o, a, sel) -> {
-            btnPagar.setDisable(sel == null || sel.getEstado() != EstadoCompra.CREADA);
+            boolean esCreada = sel != null && sel.getEstado() == EstadoCompra.CREADA;
+            btnPagar.setDisable(!esCreada);
+            btnCancelar.setDisable(!esCreada);
         });
         
         btnDetalle.setOnAction(e -> {
@@ -158,7 +163,28 @@ public class UsuarioView {
             }
         });
 
-        VBox box = new VBox(10, new Label("Mis Compras:"), lista, new HBox(10, btnDetalle, btnPDF, btnPagar));
+        btnCancelar.setOnAction(e -> {
+            Compra sel = lista.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmacion.setTitle("Cancelar Reserva");
+                confirmacion.setHeaderText("¿Estás seguro de cancelar la reserva #" + sel.getIdCompra().substring(0, 8) + "?");
+                confirmacion.setContentText("Esta acción no se puede deshacer.");
+
+                Optional<ButtonType> resultado = confirmacion.showAndWait();
+                if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
+                    boolean exito = MainApp.compraCtrl.cancelarReserva(sel.getIdCompra());
+                    if (exito) {
+                        new Alert(Alert.AlertType.INFORMATION, "Reserva cancelada exitosamente.").show();
+                        mostrarMisCompras(area); // Refrescar lista
+                    } else {
+                        new Alert(Alert.AlertType.ERROR, "No se pudo cancelar la reserva.").show();
+                    }
+                }
+            }
+        });
+
+        VBox box = new VBox(10, new Label("Mis Compras:"), lista, new HBox(10, btnDetalle, btnPDF, btnPagar, btnCancelar));
         box.setPadding(new Insets(20));
         area.setCenter(box);
     }
